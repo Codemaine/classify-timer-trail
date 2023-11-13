@@ -27,6 +27,9 @@ const pencilIcon = 'assets/icons/pencil_icon.svg';
 const gradientLogoTransparent = 'assets/intros/gradientLogo.png';
 const gradientLogoMain = 'assets/intros/gradient_logo_fill.png';
 
+const int MAX_DURATION = 60 * 60;
+const int TIMER_INCREMENT = 30;
+
 const kGoogleSansTextStyle = TextStyle(
   fontFamily: 'GoogleSans',
   fontSize: 14,
