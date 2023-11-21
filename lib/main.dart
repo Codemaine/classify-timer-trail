@@ -1,14 +1,21 @@
 import 'package:curved_labeled_navigation_bar/curved_navigation_bar.dart';
 import 'package:curved_labeled_navigation_bar/curved_navigation_bar_item.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:timer_trial/constants.dart';
 import 'package:timer_trial/pages/other_page.dart';
 import 'package:timer_trial/pages/zone.dart';
+import 'package:timer_trial/provider.dart';
 
 void main(List<String> args) {
-  runApp(MaterialApp(
-    home: ClassifyTrial(),
-  ));
+  runApp(
+    ChangeNotifierProvider(
+      create: (context) => TimerProvider(),
+      child: MaterialApp(
+        home: ClassifyTrial(),
+      ),
+    ),
+  );
 }
 
 class ClassifyTrial extends StatefulWidget {

@@ -1,12 +1,9 @@
 import 'package:flutter/material.dart';
-import 'dart:async';
+import 'package:provider/provider.dart';
 import 'package:timer_trial/constants.dart';
+import 'package:timer_trial/provider.dart';
 
-class TimerMode {
-  static const work = "Work";
-  static const shortBreak = "Short Break";
-  static const longBreak = "Long Break";
-}
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 class MyApp extends StatelessWidget {
   @override
@@ -19,6 +16,7 @@ class MyApp extends StatelessWidget {
         ),
         body: ZonePage(),
       ),
+      navigatorKey: navigatorKey,
     );
   }
 }
@@ -29,335 +27,320 @@ class ZonePage extends StatefulWidget {
 }
 
 class _ZonePageState extends State<ZonePage> {
-  String _mode = TimerMode.work;
-  int _duration = 1500;
-  bool _isRunning = false;
-  int _totalDuration = 1500;
-  Timer? _timer;
-  bool _autoTransition = true;
-
-  int _workMax = 1500;
-  int _breakMax = 300;
-  int _longBreakMax = 600;
-
-  double _tempWorkMaxValue = 1500.0;
-  double _tempBreakMaxValue = 300.0;
-  double _tempLongBreakMaxValue = 600.0;
-
-  double _tempWorkMax = 1500.0;
-  double _tempBreakMax = 300.0;
-  double _tempLongBreakMax = 600.0;
-  bool _tempAutoTransition = true;
-
   void _showEditModal() {
     showModalBottomSheet(
       context: context,
       backgroundColor: Color.fromRGBO(35, 37, 84, 1),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       builder: (BuildContext context) {
-        return StatefulBuilder(
-          builder: (BuildContext context, StateSetter setState) {
-            return DraggableScrollableSheet(
-              initialChildSize: 0.86,
-              minChildSize: 0.3,
-              maxChildSize: 1.0,
-              expand: false,
-              builder:
-                  (BuildContext context, ScrollController scrollController) {
-                return Container(
-                  padding: EdgeInsets.all(16),
+        final timerProvider = Provider.of<TimerProvider>(context, listen: true);
+        return SingleChildScrollView(
+          child: Container(
+            padding: EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Color.fromRGBO(35, 37, 84, 1),
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(20),
+                topRight: Radius.circular(20),
+              ),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Container(
+                  width: 140,
+                  height: 5,
                   decoration: BoxDecoration(
-                    color: Color.fromRGBO(35, 37, 84, 1),
-                    borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(20),
-                      topRight: Radius.circular(20),
-                    ),
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(2),
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      Container(
-                        width: 140,
-                        height: 5,
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(2),
-                        ),
-                        alignment: Alignment.center,
+                  alignment: Alignment.center,
+                ),
+                Container(
+                  padding: EdgeInsets.only(top: 27),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: <Widget>[
+                      Text(
+                        'Auto-transition timer',
+                        style: kGoogleSansTextStyle.copyWith(fontSize: 18),
                       ),
-                      Container(
-                        padding: EdgeInsets.only(top: 27),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: <Widget>[
-                            Switch(
-                              value: _tempAutoTransition,
-                              onChanged: (value) {
-                                setState(() {
-                                  _tempAutoTransition = value;
-                                });
-                              },
-                              activeColor: Colors.white,
-                              activeTrackColor: Color.fromRGBO(73, 75, 122, 1),
-                            ),
-                            Text(
-                              'Auto-transition timer',
-                              style:
-                                  kGoogleSansTextStyle.copyWith(fontSize: 18),
-                            ),
-                          ],
-                        ),
-                      ),
-                      SizedBox(height: 18),
-                      Container(
-                        child: Column(
-                          children: [
-                            Padding(
-                              padding: EdgeInsets.only(left: 20),
-                              child: Align(
-                                alignment: Alignment.centerLeft,
-                                child: Text(
-                                  'Pomodoro',
-                                  style: kGoogleSansTextStyle.copyWith(
-                                      fontSize: 18),
-                                  textAlign: TextAlign.left,
-                                ),
-                              ),
-                            ),
-                            Row(
-                              children: [
-                                Container(
-                                  width: 300,
-                                  height: 5,
-                                  child: Slider(
-                                    min: 0.5,
-                                    max: 60.0,
-                                    divisions: 60,
-                                    thumbColor:
-                                        Color.fromRGBO(109, 138, 255, 1),
-                                    activeColor:
-                                        Color.fromRGBO(109, 138, 255, 1),
-                                    inactiveColor:
-                                        Color.fromRGBO(49, 49, 91, 1),
-                                    value: _tempWorkMaxValue / 60,
-                                    onChanged: (value) {
-                                      setState(() {
-                                        _tempWorkMaxValue = value * 60;
-                                      });
-                                    },
-                                  ),
-                                ),
-                                Text(
-                                  formatTime(_tempWorkMaxValue.toInt()),
-                                  style: kGoogleSansTextStyle.copyWith(
-                                    fontSize: 32,
-                                    color: Color.fromRGBO(109, 138, 255, 1),
-                                  ),
-                                )
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                      SizedBox(height: 24),
-                      Container(
-                        child: Column(
-                          children: [
-                            Padding(
-                              padding: EdgeInsets.only(left: 20),
-                              child: Align(
-                                alignment: Alignment.centerLeft,
-                                child: Text(
-                                  'Short Break',
-                                  style: kGoogleSansTextStyle.copyWith(
-                                      fontSize: 18),
-                                  textAlign: TextAlign.left,
-                                ),
-                              ),
-                            ),
-                            Row(
-                              children: [
-                                Container(
-                                  width: 300,
-                                  height: 5,
-                                  child: Slider(
-                                    min: 0.5,
-                                    max: 60.0,
-                                    thumbColor:
-                                        Color.fromRGBO(109, 138, 255, 1),
-                                    activeColor:
-                                        Color.fromRGBO(109, 138, 255, 1),
-                                    inactiveColor:
-                                        Color.fromRGBO(49, 49, 91, 1),
-                                    value: _tempBreakMaxValue / 60,
-                                    onChanged: (value) {
-                                      setState(() {
-                                        _tempBreakMaxValue = value * 60;
-                                      });
-                                    },
-                                  ),
-                                ),
-                                Text(
-                                  formatTime(_tempBreakMaxValue.toInt()),
-                                  style: kGoogleSansTextStyle.copyWith(
-                                    fontSize: 32,
-                                    color: Color.fromRGBO(109, 138, 255, 1),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                      SizedBox(height: 24),
-                      Container(
-                        child: Column(
-                          children: [
-                            Padding(
-                              padding: EdgeInsets.only(left: 20),
-                              child: Align(
-                                alignment: Alignment.centerLeft,
-                                child: Text(
-                                  'Long Break',
-                                  style: kGoogleSansTextStyle.copyWith(
-                                      fontSize: 18),
-                                  textAlign: TextAlign.left,
-                                ),
-                              ),
-                            ),
-                            Row(
-                              children: [
-                                Container(
-                                  width: 300,
-                                  height: 5,
-                                  child: Slider(
-                                    min: 0.5,
-                                    max: 60.0,
-                                    thumbColor:
-                                        Color.fromRGBO(109, 138, 255, 1),
-                                    activeColor:
-                                        Color.fromRGBO(109, 138, 255, 1),
-                                    inactiveColor:
-                                        Color.fromRGBO(49, 49, 91, 1),
-                                    value: _tempLongBreakMaxValue / 60,
-                                    onChanged: (value) {
-                                      setState(() {
-                                        _tempLongBreakMaxValue = value * 60;
-                                      });
-                                    },
-                                  ),
-                                ),
-                                Text(
-                                  formatTime(_tempLongBreakMaxValue.toInt()),
-                                  style: kGoogleSansTextStyle.copyWith(
-                                    fontSize: 32,
-                                    color: Color.fromRGBO(109, 138, 255, 1),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                      SizedBox(height: 18),
-                      Container(
-                        width: 500,
-                        child: Center(
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              OutlinedButton(
-                                onPressed: () {
-                                  Navigator.pop(context);
-                                  setState(() {
-                                    _tempWorkMaxValue = _tempWorkMax;
-                                    _tempBreakMaxValue = _tempBreakMax;
-                                    _tempLongBreakMaxValue = _tempLongBreakMax;
-                                    _tempAutoTransition = _autoTransition;
-                                  });
-                                },
-                                child: Text(
-                                  'Cancel',
-                                  style: kGoogleSansTextStyle.copyWith(
-                                    fontSize: 14,
-                                    color: Color.fromRGBO(109, 138, 255, 1),
-                                  ),
-                                ),
-                                style: OutlinedButton.styleFrom(
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(20),
-                                  ),
-                                  side: BorderSide(
-                                    color: Color.fromRGBO(109, 138, 255, 1),
-                                  ),
-                                ),
-                              ),
-                              SizedBox(width: 10),
-                              ElevatedButton(
-                                onPressed: () {
-                                  Navigator.pop(context);
-                                  setState(() {
-                                    _workMax = _tempWorkMaxValue.toInt();
-                                    _breakMax = _tempBreakMaxValue.toInt();
-                                    _longBreakMax =
-                                        _tempLongBreakMaxValue.toInt();
-                                    _autoTransition = _tempAutoTransition;
-
-                                    if (_mode == TimerMode.work) {
-                                      _mode = TimerMode.work;
-                                      _totalDuration = _workMax;
-                                      _duration = _workMax;
-                                    } else if (_mode == TimerMode.shortBreak) {
-                                      _mode = TimerMode.shortBreak;
-                                      _totalDuration = _breakMax;
-                                      _duration = _breakMax;
-                                    } else if (_mode == TimerMode.longBreak) {
-                                      _mode = TimerMode.longBreak;
-                                      _totalDuration = _longBreakMax;
-                                      _duration = _longBreakMax;
-                                    }
-                                  });
-                                },
-                                child: Text(
-                                  'Save',
-                                  style: kGoogleSansTextStyle.copyWith(
-                                    fontSize: 14,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                                style: OutlinedButton.styleFrom(
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(20),
-                                  ),
-                                  side: BorderSide(
-                                    color: Color.fromRGBO(109, 138, 255, 1),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
+                      Switch(
+                        value: timerProvider.tempAutoTransition,
+                        onChanged: (value) {
+                          setState(() {
+                            timerProvider.tempAutoTransition = value;
+                          });
+                        },
+                        activeColor: Colors.white,
+                        activeTrackColor: Color.fromRGBO(73, 75, 122, 1),
                       ),
                     ],
                   ),
-                );
-              },
-            );
-          },
+                ),
+                SizedBox(height: 18),
+                SizedBox(height: 18),
+                Container(
+                  child: Column(
+                    children: [
+                      Padding(
+                        padding: EdgeInsets.only(left: 20),
+                        child: Align(
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            'Pomodoro',
+                            style: kGoogleSansTextStyle.copyWith(fontSize: 18),
+                            textAlign: TextAlign.left,
+                          ),
+                        ),
+                      ),
+                      Row(
+                        children: [
+                          Expanded(
+                              flex: 6,
+                              child: Container(
+                                height: 5,
+                                child: Slider(
+                                  min: 0.5,
+                                  max: 60.0,
+                                  divisions: 60,
+                                  thumbColor: Color.fromRGBO(109, 138, 255, 1),
+                                  activeColor: Color.fromRGBO(109, 138, 255, 1),
+                                  inactiveColor: Color.fromRGBO(49, 49, 91, 1),
+                                  value: timerProvider.tempWorkMaxValue / 60,
+                                  onChanged: (value) {
+                                    setState(() {
+                                      timerProvider.tempWorkMaxValue =
+                                          value * 60;
+                                    });
+                                  },
+                                ),
+                              )),
+                          Text(
+                            timerProvider.formatTime(
+                                timerProvider.tempWorkMaxValue.toInt()),
+                            style: kGoogleSansTextStyle.copyWith(
+                              fontSize: 32,
+                              color: Color.fromRGBO(109, 138, 255, 1),
+                            ),
+                          )
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                SizedBox(height: 24),
+                Container(
+                  child: Column(
+                    children: [
+                      Padding(
+                        padding: EdgeInsets.only(left: 20),
+                        child: Align(
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            'Short Break',
+                            style: kGoogleSansTextStyle.copyWith(fontSize: 18),
+                            textAlign: TextAlign.left,
+                          ),
+                        ),
+                      ),
+                      Row(
+                        children: [
+                          Expanded(
+                              flex: 6,
+                              child: Container(
+                                height: 5,
+                                child: Slider(
+                                  min: 0.5,
+                                  max: 60.0,
+                                  thumbColor: Color.fromRGBO(109, 138, 255, 1),
+                                  activeColor: Color.fromRGBO(109, 138, 255, 1),
+                                  inactiveColor: Color.fromRGBO(49, 49, 91, 1),
+                                  value: timerProvider.tempBreakMaxValue / 60,
+                                  onChanged: (value) {
+                                    setState(() {
+                                      timerProvider.tempBreakMaxValue =
+                                          value * 60;
+                                    });
+                                  },
+                                ),
+                              )),
+                          Text(
+                            timerProvider.formatTime(
+                                timerProvider.tempBreakMaxValue.toInt()),
+                            style: kGoogleSansTextStyle.copyWith(
+                              fontSize: 32,
+                              color: Color.fromRGBO(109, 138, 255, 1),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                SizedBox(height: 24),
+                Container(
+                  child: Column(
+                    children: [
+                      Padding(
+                        padding: EdgeInsets.only(left: 20),
+                        child: Align(
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            'Long Break',
+                            style: kGoogleSansTextStyle.copyWith(fontSize: 18),
+                            textAlign: TextAlign.left,
+                          ),
+                        ),
+                      ),
+                      Row(
+                        children: [
+                          Expanded(
+                              flex: 6,
+                              child: Container(
+                                height: 5,
+                                child: Slider(
+                                  min: 0.5,
+                                  max: 60.0,
+                                  thumbColor: Color.fromRGBO(109, 138, 255, 1),
+                                  activeColor: Color.fromRGBO(109, 138, 255, 1),
+                                  inactiveColor: Color.fromRGBO(49, 49, 91, 1),
+                                  value:
+                                      timerProvider.tempLongBreakMaxValue / 60,
+                                  onChanged: (value) {
+                                    setState(() {
+                                      timerProvider.tempLongBreakMaxValue =
+                                          value * 60;
+                                    });
+                                  },
+                                ),
+                              )),
+                          Text(
+                            timerProvider.formatTime(
+                                timerProvider.tempLongBreakMaxValue.toInt()),
+                            style: kGoogleSansTextStyle.copyWith(
+                              fontSize: 32,
+                              color: Color.fromRGBO(109, 138, 255, 1),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                SizedBox(height: 18),
+                Container(
+                  child: Center(
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        OutlinedButton(
+                          onPressed: () {
+                            Navigator.pop(context);
+                            setState(() {
+                              // Revert back changes on cancel
+                              timerProvider.tempWorkMaxValue =
+                                  timerProvider.workMax.toDouble();
+                              timerProvider.tempBreakMaxValue =
+                                  timerProvider.breakMax.toDouble();
+                              timerProvider.tempLongBreakMaxValue =
+                                  timerProvider.longBreakMax.toDouble();
+                              timerProvider.tempAutoTransition =
+                                  timerProvider.autoTransition;
+                            });
+                          },
+                          child: Text(
+                            'Cancel',
+                            style: kGoogleSansTextStyle.copyWith(
+                              fontSize: 14,
+                              color: Color.fromRGBO(109, 138, 255, 1),
+                            ),
+                          ),
+                          style: OutlinedButton.styleFrom(
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            side: BorderSide(
+                              color: Color.fromRGBO(109, 138, 255, 1),
+                            ),
+                          ),
+                        ),
+                        SizedBox(width: 10),
+                        ElevatedButton(
+                          onPressed: () {
+                            Navigator.pop(context);
+                            setState(() {
+                              // Save changes on confirmation
+                              timerProvider.workMax =
+                                  timerProvider.tempWorkMaxValue.toInt();
+                              timerProvider.breakMax =
+                                  timerProvider.tempBreakMaxValue.toInt();
+                              timerProvider.longBreakMax =
+                                  timerProvider.tempLongBreakMaxValue.toInt();
+                              timerProvider.autoTransition =
+                                  timerProvider.tempAutoTransition;
+
+                              // Adjust the mode and durations accordingly
+                              if (timerProvider.mode == "Work") {
+                                timerProvider.mode = "Work";
+                                timerProvider.totalDuration =
+                                    timerProvider.workMax;
+                                timerProvider.duration = timerProvider.workMax;
+                              } else if (timerProvider.mode == "Short Break") {
+                                timerProvider.mode = "Short Break";
+                                timerProvider.totalDuration =
+                                    timerProvider.breakMax;
+                                timerProvider.duration = timerProvider.breakMax;
+                              } else if (timerProvider.mode == "Long Break") {
+                                timerProvider.mode = "Long Break";
+                                timerProvider.totalDuration =
+                                    timerProvider.longBreakMax;
+                                timerProvider.duration =
+                                    timerProvider.longBreakMax;
+                              }
+                            });
+                          },
+                          child: Text(
+                            'Save',
+                            style: kGoogleSansTextStyle.copyWith(
+                              fontSize: 14,
+                              color: Colors.white,
+                            ),
+                          ),
+                          style: OutlinedButton.styleFrom(
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            side: BorderSide(
+                              color: Color.fromRGBO(109, 138, 255, 1),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                SizedBox(
+                  height: 20,
+                )
+              ],
+            ),
+          ),
         );
       },
-    ).whenComplete(() => {
-          setState(() {
-            _tempWorkMaxValue = _workMax.toDouble();
-            _tempBreakMaxValue = _breakMax.toDouble();
-            _tempLongBreakMaxValue = _longBreakMax.toDouble();
-            _tempAutoTransition = _autoTransition;
-          })
-        });
+    ).whenComplete(() {
+      final timerProvider = Provider.of<TimerProvider>(context, listen: false);
+      timerProvider.tempWorkMaxValue = timerProvider.workMax.toDouble();
+      timerProvider.tempBreakMaxValue = timerProvider.breakMax.toDouble();
+      timerProvider.tempLongBreakMaxValue =
+          timerProvider.longBreakMax.toDouble();
+      timerProvider.tempAutoTransition = timerProvider.autoTransition;
+    });
   }
 
   @override
   Widget build(BuildContext context) {
+    final timerProvider = Provider.of<TimerProvider>(context, listen: true);
     return StatefulBuilder(
         builder: (BuildContext context, StateSetter setState) {
       return Center(
@@ -407,12 +390,12 @@ class _ZonePageState extends State<ZonePage> {
                             child: Row(
                               children: [
                                 GestureDetector(
-                                  onTap: () => _switchMode(TimerMode.work),
+                                  onTap: () => timerProvider.switchMode("Work"),
                                   child: Text(
                                     "POMODORO".toUpperCase(),
                                     style: kSFTextStyle.copyWith(
                                       fontSize: 12,
-                                      color: _mode == TimerMode.work
+                                      color: timerProvider.mode == 'Work'
                                           ? Colors.white
                                           : Color.fromRGBO(73, 75, 122, 1),
                                     ),
@@ -423,12 +406,12 @@ class _ZonePageState extends State<ZonePage> {
                                 ),
                                 GestureDetector(
                                   onTap: () =>
-                                      _switchMode(TimerMode.shortBreak),
+                                      timerProvider.switchMode("Short Break"),
                                   child: Text(
                                     "SHORT BREAK".toUpperCase(),
                                     style: kSFTextStyle.copyWith(
                                       fontSize: 12,
-                                      color: _mode == TimerMode.shortBreak
+                                      color: timerProvider.mode == "Short Break"
                                           ? Colors.white
                                           : Color.fromRGBO(73, 75, 122, 1),
                                     ),
@@ -438,12 +421,13 @@ class _ZonePageState extends State<ZonePage> {
                                   width: 11,
                                 ),
                                 GestureDetector(
-                                  onTap: () => _switchMode(TimerMode.longBreak),
+                                  onTap: () =>
+                                      timerProvider.switchMode("Long Break"),
                                   child: Text(
                                     "LONG BREAK".toUpperCase(),
                                     style: kSFTextStyle.copyWith(
                                       fontSize: 12,
-                                      color: _mode == TimerMode.longBreak
+                                      color: timerProvider.mode == "Long Break"
                                           ? Colors.white
                                           : Color.fromRGBO(73, 75, 122, 1),
                                     ),
@@ -463,14 +447,16 @@ class _ZonePageState extends State<ZonePage> {
                                     child: CircularProgressIndicator(
                                       strokeWidth: 6,
                                       color: Color.fromRGBO(241, 87, 255, 1),
-                                      value: _duration / _totalDuration,
+                                      value: timerProvider.duration /
+                                          timerProvider.totalDuration,
                                       strokeCap: StrokeCap.round,
                                     ),
                                   ),
                                 ),
                                 Center(
                                   child: Text(
-                                    formatTime(_duration),
+                                    timerProvider
+                                        .formatTime(timerProvider.duration),
                                     style: kGoogleSansTextStyle.copyWith(
                                       fontSize: 40,
                                     ),
@@ -490,7 +476,7 @@ class _ZonePageState extends State<ZonePage> {
                                       "assets/icons/icons8_reset_96px_2.png",
                                       width: 20,
                                     ),
-                                    onPressed: _resetTimer,
+                                    onPressed: timerProvider.resetTimer,
                                   ),
                                   backgroundColor:
                                       Color.fromRGBO(73, 75, 122, 1),
@@ -500,9 +486,10 @@ class _ZonePageState extends State<ZonePage> {
                                 ),
                                 CircleAvatar(
                                   child: IconButton(
-                                    onPressed:
-                                        _isRunning ? _pauseTimer : _startTimer,
-                                    icon: _isRunning
+                                    onPressed: timerProvider.isRunning
+                                        ? timerProvider.pauseTimer
+                                        : timerProvider.startTimer,
+                                    icon: timerProvider.isRunning
                                         ? Image.asset(
                                             'assets/icons/icons8_pause_96px_2.png',
                                           )
@@ -519,12 +506,11 @@ class _ZonePageState extends State<ZonePage> {
                                 ),
                                 CircleAvatar(
                                   child: IconButton(
-                                    icon: Image.asset(
-                                      "assets/icons/icons8_edit_96px_4.png",
-                                      width: 20,
-                                    ),
-                                    onPressed: _showEditModal,
-                                  ),
+                                      icon: Image.asset(
+                                        "assets/icons/icons8_edit_96px_4.png",
+                                        width: 20,
+                                      ),
+                                      onPressed: _showEditModal),
                                   backgroundColor:
                                       Color.fromRGBO(73, 75, 122, 1),
                                 ),
@@ -540,8 +526,10 @@ class _ZonePageState extends State<ZonePage> {
                     right: 20,
                     child: CircleAvatar(
                       child: IconButton(
-                        onPressed: _isRunning ? _pauseTimer : _startTimer,
-                        icon: _isRunning
+                        onPressed: timerProvider.isRunning
+                            ? timerProvider.pauseTimer
+                            : timerProvider.startTimer,
+                        icon: timerProvider.isRunning
                             ? Image.asset(
                                 'assets/icons/icons8_pause_96px_2.png')
                             : Image.asset(
@@ -558,83 +546,6 @@ class _ZonePageState extends State<ZonePage> {
         ),
       );
     });
-  }
-
-  void _startTimer() {
-    setState(() {
-      _isRunning = true;
-      _timer = Timer.periodic(Duration(seconds: 1), (timer) {
-        if (_duration > 0) {
-          setState(() {
-            _duration--;
-          });
-        } else {
-          _timer?.cancel();
-          _isRunning = false;
-
-          // Handle mode transitions
-          if (_autoTransition) {
-            if (_mode == TimerMode.work) {
-              _switchMode(TimerMode.shortBreak);
-            } else if (_mode == TimerMode.shortBreak) {
-              _switchMode(TimerMode.longBreak);
-            } else if (_mode == TimerMode.longBreak) {
-              _switchMode(TimerMode.work);
-            }
-          }
-        }
-      });
-    });
-  }
-
-  void _pauseTimer() {
-    setState(() {
-      _timer?.cancel();
-      _isRunning = false;
-    });
-  }
-
-  void _resetTimer() {
-    setState(() {
-      _timer?.cancel();
-      _isRunning = false;
-      _duration = _totalDuration;
-    });
-  }
-
-  void _closeModal(BuildContext context) {
-    print('close');
-    Navigator.pop(context);
-  }
-
-  void _switchMode(String mode) {
-    setState(() {
-      if (_timer != null) {
-        _timer?.cancel(); // Cancel the existing timer if running
-      }
-
-      if (mode == TimerMode.work) {
-        _mode = TimerMode.work;
-        _totalDuration = _workMax;
-        _duration = _totalDuration;
-      } else if (mode == TimerMode.shortBreak) {
-        _mode = TimerMode.shortBreak;
-        _totalDuration = _breakMax;
-        _duration = _totalDuration;
-      } else if (mode == TimerMode.longBreak) {
-        _mode = TimerMode.longBreak;
-        _totalDuration = _longBreakMax;
-        _duration = _totalDuration;
-      }
-
-      _isRunning = false;
-    });
-  }
-
-  String formatTime(int seconds) {
-    int minutes = seconds ~/ 60;
-    int remainingSeconds = seconds % 60;
-    return '$minutes:${remainingSeconds.toString().padLeft(2, '0')}';
   }
 }
 
