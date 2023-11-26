@@ -442,16 +442,27 @@ class _ZonePageState extends State<ZonePage> {
                               children: <Widget>[
                                 Center(
                                   child: Container(
-                                    width: 200,
-                                    height: 200,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 6,
-                                      color: Color.fromRGBO(241, 87, 255, 1),
-                                      value: timerProvider.duration /
-                                          timerProvider.totalDuration,
-                                      strokeCap: StrokeCap.round,
-                                    ),
-                                  ),
+                                      width: 200,
+                                      height: 200,
+                                      child: TweenAnimationBuilder(
+                                        tween: Tween<double>(
+                                            begin: 0.0,
+                                            end: timerProvider.duration /
+                                                timerProvider.totalDuration),
+                                        duration: Duration(
+                                            seconds:
+                                                1), // Set the duration of the animation
+                                        builder: (BuildContext context,
+                                            double value, Widget? child) {
+                                          return CircularProgressIndicator(
+                                            strokeWidth: 6,
+                                            color:
+                                                Color.fromRGBO(241, 87, 255, 1),
+                                            value: value,
+                                            strokeCap: StrokeCap.round,
+                                          );
+                                        },
+                                      )),
                                 ),
                                 Center(
                                   child: Text(
