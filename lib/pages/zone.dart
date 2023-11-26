@@ -390,7 +390,8 @@ class _ZonePageState extends State<ZonePage> {
                             child: Row(
                               children: [
                                 GestureDetector(
-                                  onTap: () => timerProvider.switchMode("Work"),
+                                  onTap: () =>
+                                      timerProvider.switchMode("Work", true),
                                   child: Text(
                                     "POMODORO".toUpperCase(),
                                     style: kSFTextStyle.copyWith(
@@ -405,8 +406,8 @@ class _ZonePageState extends State<ZonePage> {
                                   width: 11,
                                 ),
                                 GestureDetector(
-                                  onTap: () =>
-                                      timerProvider.switchMode("Short Break"),
+                                  onTap: () => timerProvider.switchMode(
+                                      "Short Break", true),
                                   child: Text(
                                     "SHORT BREAK".toUpperCase(),
                                     style: kSFTextStyle.copyWith(
@@ -421,8 +422,8 @@ class _ZonePageState extends State<ZonePage> {
                                   width: 11,
                                 ),
                                 GestureDetector(
-                                  onTap: () =>
-                                      timerProvider.switchMode("Long Break"),
+                                  onTap: () => timerProvider.switchMode(
+                                      "Long Break", true),
                                   child: Text(
                                     "LONG BREAK".toUpperCase(),
                                     style: kSFTextStyle.copyWith(

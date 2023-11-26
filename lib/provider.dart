@@ -116,11 +116,11 @@ class TimerProvider extends ChangeNotifier {
         _stopTimer();
         if (_autoTransition) {
           if (_mode == work) {
-            switchMode(shortBreak);
+            switchMode(shortBreak, false);
           } else if (_mode == shortBreak) {
-            switchMode(longBreak);
+            switchMode(longBreak, false);
           } else if (_mode == longBreak) {
-            switchMode(work);
+            switchMode(work, false);
           }
         } else {
           resetTimer();
@@ -143,7 +143,7 @@ class TimerProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  void switchMode(String mode) {
+  void switchMode(String mode, bool isManual) {
     if (_timer != null) {
       _stopTimer();
     }
@@ -161,7 +161,7 @@ class TimerProvider extends ChangeNotifier {
 
     _duration = _totalDuration;
 
-    if (_autoTransition) {
+    if (_autoTransition & !isManual) {
       startTimer();
     } else {
       _isRunning = false;
@@ -180,6 +180,4 @@ class TimerProvider extends ChangeNotifier {
     int remainingSeconds = seconds % 60;
     return '$minutes:${remainingSeconds.toString().padLeft(2, '0')}';
   }
-
-  // Add other methods here
 }
