@@ -114,6 +114,17 @@ class TimerProvider extends ChangeNotifier {
         notifyListeners();
       } else {
         _stopTimer();
+        if (_autoTransition) {
+          if (_mode == work) {
+            switchMode(shortBreak);
+          } else if (_mode == shortBreak) {
+            switchMode(longBreak);
+          } else if (_mode == longBreak) {
+            switchMode(work);
+          }
+        } else {
+          resetTimer();
+        }
       }
     });
     notifyListeners();
